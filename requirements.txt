@@ -1,0 +1,20 @@
+# Core Data Modeling & Validation
+pydantic>=2.6.0
+
+# HTTP & API Requests
+requests>=2.31.0
+
+# Free Live Web Scraper (No API keys required)
+scrapetube>=2.6.0
+
+# Interactive Reviewer Dashboard
+streamlit>=1.35.0
+
+# Data Analysis & CSV handling
+pandas>=2.2.0
+
+# Environment Management
+python-dotenv>=1.0.1
+
+# Terminal Formatting & Logging
+rich>=13.7.0

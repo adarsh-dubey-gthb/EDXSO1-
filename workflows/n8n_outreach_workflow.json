@@ -1,0 +1,244 @@
+{
+  "name": "Automated Micro-Influencer Outreach Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ]
+        }
+      },
+      "id": "trigger-cron",
+      "name": "Daily Outreach Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "influencer-outreach",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Python Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://raw.githubusercontent.com/username/assignement1/main/data/influencer_dataset.csv",
+        "options": {}
+      },
+      "id": "fetch-dataset",
+      "name": "Fetch Discovered Influencers",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "follower-min",
+              "leftValue": "={{ $json.body?.followers ?? $json.followers }}",
+              "rightValue": 5000,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "follower-max",
+              "leftValue": "={{ $json.body?.followers ?? $json.followers }}",
+              "rightValue": 100000,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            },
+            {
+              "id": "email-valid",
+              "leftValue": "={{ $json.body?.email ?? $json.email }}",
+              "rightValue": "Not Found",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "filter-node",
+      "name": "Filter: 5k-100k & Has Email",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "prompt": "=Write an outreach pitch for tech creator {{ $json.name }} focusing on {{ $json.content_themes }}. Recent video: '{{ $json.recent_content_title }}'.\n\n1. Email Pitch: Exactly 60-90 words referencing their video and proposing DevPulse tool sponsorship.\n2. Instagram DM: Exactly 15-30 words, casual and peer-to-peer.\n\nFormat as JSON:\n{\n  \"email_subject\": \"...\",\n  \"email_body\": \"...\",\n  \"instagram_dm\": \"...\"\n}",
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "id": "openai-personalization",
+      "name": "AI Personalization (60-90w Email & 15-30w DM)",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        920,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "toEmail": "={{ $json.email }}",
+        "subject": "={{ $json.email_subject }}",
+        "body": "={{ $json.email_body }}",
+        "options": {}
+      },
+      "id": "send-email-node",
+      "name": "Dispatch Outreach Email (SMTP / Gmail)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1150,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "outreach_tracker_sheet",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Influencer": "={{ $('Python Webhook Trigger').item.json.body?.influencer ?? $json.name }}",
+            "Email": "={{ $('Python Webhook Trigger').item.json.body?.email ?? $json.email }}",
+            "Email Subject": "={{ $('Python Webhook Trigger').item.json.body?.subject ?? $json.email_subject }}",
+            "Email Pitch": "={{ $('AI Personalization (60-90w Email & 15-30w DM)').item.json.output ?? $('Python Webhook Trigger').item.json.body?.pitch }}",
+            "Instagram DM": "={{ $('Python Webhook Trigger').item.json.body?.instagram_dm ?? $json.instagram_dm }}",
+            "Message Generated": "Yes",
+            "Sent": "Yes",
+            "Date": "={{ $now.format('YYYY-MM-DD HH:mm:ss') }}",
+            "Status": "SENT"
+          }
+        }
+      },
+      "id": "log-tracker-node",
+      "name": "Outreach Tracker Audit Log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.3,
+      "position": [
+        1380,
+        280
+      ]
+    }
+  ],
+  "connections": {
+    "Daily Outreach Schedule": {
+      "main": [
+        [
+          {
+            "node": "Fetch Discovered Influencers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Python Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Filter: 5k-100k & Has Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Discovered Influencers": {
+      "main": [
+        [
+          {
+            "node": "Filter: 5k-100k & Has Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter: 5k-100k & Has Email": {
+      "main": [
+        [
+          {
+            "node": "AI Personalization (60-90w Email & 15-30w DM)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Personalization (60-90w Email & 15-30w DM)": {
+      "main": [
+        [
+          {
+            "node": "Dispatch Outreach Email (SMTP / Gmail)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dispatch Outreach Email (SMTP / Gmail)": {
+      "main": [
+        [
+          {
+            "node": "Outreach Tracker Audit Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
