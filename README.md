@@ -28,21 +28,21 @@ Modern influencer marketing requires identifying niche-aligned creators, auditin
 
 ```mermaid
 flowchart TD
-    A[Social Platforms / YouTube Scraper] --> B[Discovery Engine]
-    B --> C[(50+ Discovered Profiles)]
-    C --> D[Filtering & Classification Engine]
-    D -->|Passed / Failed + Audit Reason| E[Profile Enrichment Engine]
-    E --> F[LangChain LCEL Mail Agent]
-    F -->|Ranks & Selects| G[Top 5 Qualified Creators]
-    G --> H[LCEL Chain: Prompt | Gemini | JsonOutputParser]
-    H --> I[Drafted Pitches: 60-90w Email & 15-30w DM]
-    I --> J{🧑‍💻 Human-in-the-Loop Review}
-    J -->|Edit / Reject| J
-    J -->|Approve| K[Sending Layer & Idempotency Check]
-    K -->|Simulation or SMTP| L[(Outreach Tracker & SQLite DB)]
-    K -->|Webhook Event| M[n8n Automation Pipeline]
-    L --> N[Export: influencer_dataset.csv]
-    L --> O[Export: outreach_tracker.csv]
+    A["Social Platforms / YouTube Scraper"] --> B["Discovery Engine"]
+    B --> C[("50+ Discovered Profiles")]
+    C --> D["Filtering & Classification Engine"]
+    D -->|"Passed / Failed + Audit Reason"| E["Profile Enrichment Engine"]
+    E --> F["LangChain LCEL Mail Agent"]
+    F -->|"Ranks & Selects"| G["Top 5 Qualified Creators"]
+    G --> H["LCEL Chain: Prompt + Gemini + JsonOutputParser"]
+    H --> I["Drafted Pitches: 60-90w Email & 15-30w DM"]
+    I --> J{"🧑‍💻 Human-in-the-Loop Review"}
+    J -->|"Edit / Reject"| J
+    J -->|"Approve"| K["Sending Layer & Idempotency Check"]
+    K -->|"Simulation or SMTP"| L[("Outreach Tracker & SQLite DB")]
+    K -->|"Webhook Event"| M["n8n Automation Pipeline"]
+    L --> N["Export: influencer_dataset.csv"]
+    L --> O["Export: outreach_tracker.csv"]
 ```
 
 ---
