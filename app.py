@@ -213,6 +213,38 @@ df = pd.DataFrame(all_records)
 logs = storage.get_all_outreach_logs()
 df_logs = pd.DataFrame(logs) if logs else pd.DataFrame()
 
+# Sidebar Multi-Format Downloads
+st.sidebar.markdown("---")
+st.sidebar.markdown("#### **📥 Download Influencer List**")
+st.sidebar.caption("Instant export in any format (All 55+ Creators):")
+
+col_sb1, col_sb2 = st.sidebar.columns(2)
+with col_sb1:
+    if DATASET_EXCEL_PATH.exists():
+        with open(DATASET_EXCEL_PATH, "rb") as f:
+            st.download_button("📊 Excel (.xlsx)", f, "influencer_dataset.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True, key="sb_dl_excel")
+    else:
+        st.download_button("📊 Excel (.xlsx)", df_to_excel_bytes(df), "influencer_dataset.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True, key="sb_dl_excel")
+
+with col_sb2:
+    if DATASET_JSON_PATH.exists():
+        with open(DATASET_JSON_PATH, "rb") as f:
+            st.download_button("🌐 JSON (.json)", f, "influencer_dataset.json", "application/json", use_container_width=True, key="sb_dl_json")
+    else:
+        st.download_button("🌐 JSON (.json)", df_to_json_str(df), "influencer_dataset.json", "application/json", use_container_width=True, key="sb_dl_json")
+
+col_sb3, col_sb4 = st.sidebar.columns(2)
+with col_sb3:
+    if DATASET_CSV_PATH.exists():
+        with open(DATASET_CSV_PATH, "rb") as f:
+            st.download_button("📄 CSV (.csv)", f, "influencer_dataset.csv", "text/csv", use_container_width=True, key="sb_dl_csv")
+    else:
+        st.download_button("📄 CSV (.csv)", df_to_csv_str(df), "influencer_dataset.csv", "text/csv", use_container_width=True, key="sb_dl_csv")
+
+with col_sb4:
+    st.download_button("📝 Markdown", df_to_markdown_str(df), "influencer_dataset.md", "text/markdown", use_container_width=True, key="sb_dl_md")
+
+
 # ==============================================================================
 # HEADER & KEY STATS
 # ==============================================================================
@@ -278,6 +310,18 @@ with tab_agent:
         "3. LangChain Mail Agent selects **Top 5 Creators** & generates custom pitches via LCEL ➔ "
         "4. **Human-in-the-Loop Review** (Edit / Approve / Reject) ➔ 5. Dispatch & Track."
     )
+
+    with st.expander("📥 **Instant Downloads: Export 55+ Influencers Dataset (Excel, JSON, CSV, Markdown)**", expanded=False):
+        t0_c1, t0_c2, t0_c3, t0_c4 = st.columns(4)
+        with t0_c1:
+            st.download_button("📊 Excel (.xlsx)", df_to_excel_bytes(df), "influencer_dataset.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True, key="tab0_dl_excel")
+        with t0_c2:
+            st.download_button("🌐 JSON (.json)", df_to_json_str(df), "influencer_dataset.json", "application/json", use_container_width=True, key="tab0_dl_json")
+        with t0_c3:
+            st.download_button("📄 CSV (.csv)", df_to_csv_str(df), "influencer_dataset.csv", "text/csv", use_container_width=True, key="tab0_dl_csv")
+        with t0_c4:
+            st.download_button("📝 Markdown (.md)", df_to_markdown_str(df), "influencer_dataset.md", "text/markdown", use_container_width=True, key="tab0_dl_md")
+
 
     # Discovery & Agent trigger controls
     col_q, col_btn = st.columns([3, 1])
@@ -637,88 +681,92 @@ with tab_dataset:
         "Audit Reason": filtered["filter_reason"]
     })
 
+    # --------------------------------------------------------------------------
+    # MULTI-FORMAT EXPORT CENTER (LOCATED AT THE TOP FOR IMMEDIATE ACCESS)
+    # --------------------------------------------------------------------------
+    with st.container(border=True):
+        st.markdown("##### 📥 **Download & Export Influencers List (Multi-Format)**")
+        exp_col_scope, exp_col_xlsx, exp_col_json, exp_col_csv, exp_col_md = st.columns([1.8, 1.2, 1.2, 1.2, 1.2])
+
+        with exp_col_scope:
+            export_scope = st.radio(
+                "Export Scope",
+                [f"Filtered Selection ({len(table_view)})", f"Full Dataset ({len(df)})"],
+                horizontal=False,
+                key="top_tab1_scope",
+                help="Choose whether to download only the currently searched/filtered rows or the entire 55+ creator dataset."
+            )
+
+        # Prepare export dataframe
+        if "Filtered" in export_scope:
+            df_target = table_view
+            prefix = "influencers_filtered"
+        else:
+            df_target = pd.DataFrame({
+                "Influencer Name": df["name"],
+                "Platform": df["platform"],
+                "Profile URL": df["profile_url"],
+                "Follower Count": df["followers"],
+                "Engagement Rate": df["engagement_rate"].apply(lambda x: f"{x:.1f}%"),
+                "Category / Niche": df["niche"],
+                "Content Themes": df["content_themes"],
+                "Contact Email": df["email"],
+                "Instagram / YouTube / TikTok": df.get("social_handles", pd.Series([""] * len(df))),
+                "Website": df.get("website", pd.Series([""] * len(df))),
+                "Audience Age": df.get("audience_age", pd.Series(["20-35"] * len(df))),
+                "Audience Gender": df.get("audience_gender", pd.Series(["Mixed (Tech Audience)"] * len(df))),
+                "Audience Geography": df.get("audience_geography", pd.Series(["Global"] * len(df))),
+                "Status": df["filter_status"],
+                "Audit Reason": df["filter_reason"]
+            })
+            prefix = "influencer_dataset_full"
+
+        with exp_col_xlsx:
+            st.markdown("**Spreadsheet**")
+            st.download_button(
+                "📊 Excel (.xlsx)",
+                df_to_excel_bytes(df_target),
+                f"{prefix}.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+                key="t1_dl_xlsx"
+            )
+
+        with exp_col_json:
+            st.markdown("**Developer API**")
+            st.download_button(
+                "🌐 JSON (.json)",
+                df_to_json_str(df_target),
+                f"{prefix}.json",
+                "application/json",
+                use_container_width=True,
+                key="t1_dl_json"
+            )
+
+        with exp_col_csv:
+            st.markdown("**Flat File**")
+            st.download_button(
+                "📄 CSV (.csv)",
+                df_to_csv_str(df_target),
+                f"{prefix}.csv",
+                "text/csv",
+                use_container_width=True,
+                key="t1_dl_csv"
+            )
+
+        with exp_col_md:
+            st.markdown("**Documentation**")
+            st.download_button(
+                "📝 Markdown (.md)",
+                df_to_markdown_str(df_target),
+                f"{prefix}.md",
+                "text/markdown",
+                use_container_width=True,
+                key="t1_dl_md"
+            )
+
+    st.write("")
     st.dataframe(table_view, use_container_width=True, height=430)
-
-    # --------------------------------------------------------------------------
-    # MULTI-FORMAT EXPORT CENTER
-    # --------------------------------------------------------------------------
-    st.markdown("---")
-    st.markdown("#### 📥 **Download & Export Influencers List**")
-    st.caption("Export the shortlisted creators in your preferred format (CSV, Excel, JSON, Markdown).")
-
-    exp_col_scope, exp_col_csv, exp_col_xlsx, exp_col_json, exp_col_md = st.columns([1.8, 1.2, 1.2, 1.2, 1.2])
-
-    with exp_col_scope:
-        export_scope = st.radio(
-            "Export Scope",
-            [f"Filtered Selection ({len(table_view)})", f"Full Dataset ({len(df)})"],
-            horizontal=False,
-            help="Choose whether to download only the currently searched/filtered rows or the entire 55+ creator dataset."
-        )
-
-    # Prepare export dataframe
-    if "Filtered" in export_scope:
-        df_target = table_view
-        prefix = "influencers_filtered"
-    else:
-        df_target = pd.DataFrame({
-            "Influencer Name": df["name"],
-            "Platform": df["platform"],
-            "Profile URL": df["profile_url"],
-            "Follower Count": df["followers"],
-            "Engagement Rate": df["engagement_rate"].apply(lambda x: f"{x:.1f}%"),
-            "Category / Niche": df["niche"],
-            "Content Themes": df["content_themes"],
-            "Contact Email": df["email"],
-            "Instagram / YouTube / TikTok": df.get("social_handles", pd.Series([""] * len(df))),
-            "Website": df.get("website", pd.Series([""] * len(df))),
-            "Audience Age": df.get("audience_age", pd.Series(["20-35"] * len(df))),
-            "Audience Gender": df.get("audience_gender", pd.Series(["Mixed (Tech Audience)"] * len(df))),
-            "Audience Geography": df.get("audience_geography", pd.Series(["Global"] * len(df))),
-            "Status": df["filter_status"],
-            "Audit Reason": df["filter_reason"]
-        })
-        prefix = "influencer_dataset_full"
-
-    with exp_col_csv:
-        st.markdown("**Flat File**")
-        st.download_button(
-            "📄 CSV (.csv)",
-            df_to_csv_str(df_target),
-            f"{prefix}.csv",
-            "text/csv",
-            use_container_width=True
-        )
-
-    with exp_col_xlsx:
-        st.markdown("**Spreadsheet**")
-        st.download_button(
-            "📊 Excel (.xlsx)",
-            df_to_excel_bytes(df_target),
-            f"{prefix}.xlsx",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True
-        )
-
-    with exp_col_json:
-        st.markdown("**Developer API**")
-        st.download_button(
-            "🌐 JSON (.json)",
-            df_to_json_str(df_target),
-            f"{prefix}.json",
-            "application/json",
-            use_container_width=True
-        )
-
-    with exp_col_md:
-        st.markdown("**Documentation**")
-        st.download_button(
-            "📝 Markdown (.md)",
-            df_to_markdown_str(df_target),
-            f"{prefix}.md",
-            "text/markdown",
-            use_container_width=True
-        )
 
 # ------------------------------------------------------------------------------
 # TAB 2: PERSONALIZED MESSAGES
