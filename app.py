@@ -16,6 +16,7 @@ try:
 except Exception:
     pass
 
+import io
 import streamlit as st
 import pandas as pd
 from pathlib import Path
@@ -27,8 +28,30 @@ from config import (
     MAX_FOLLOWERS,
     MIN_ENGAGEMENT_RATE,
     DATASET_CSV_PATH,
-    TRACKER_CSV_PATH
+    DATASET_JSON_PATH,
+    DATASET_EXCEL_PATH,
+    TRACKER_CSV_PATH,
+    TRACKER_JSON_PATH,
+    TRACKER_EXCEL_PATH
 )
+
+def df_to_excel_bytes(data_df: pd.DataFrame) -> bytes:
+    buffer = io.BytesIO()
+    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+        data_df.to_excel(writer, index=False, sheet_name="Influencers")
+    return buffer.getvalue()
+
+def df_to_json_str(data_df: pd.DataFrame) -> str:
+    return data_df.to_json(orient="records", indent=2)
+
+def df_to_csv_str(data_df: pd.DataFrame) -> str:
+    return data_df.to_csv(index=False)
+
+def df_to_markdown_str(data_df: pd.DataFrame) -> str:
+    try:
+        return data_df.to_markdown(index=False)
+    except Exception:
+        return data_df.to_string(index=False)
 from discovery.youtube_crawler import InfluencerDiscoveryEngine
 from filtering.classifier import InfluencerClassifier
 from enrichment.extractor import ProfileEnrichmentEngine
@@ -576,16 +599,12 @@ with tab_agent:
 # ------------------------------------------------------------------------------
 with tab_dataset:
     st.write("")
-    c_search, c_status, c_down = st.columns([3, 2, 2])
+    c_search, c_status = st.columns([3, 2])
     
     with c_search:
         search_term = st.text_input("Search creator, topic, or email", placeholder="Type to filter...", label_visibility="collapsed")
     with c_status:
         status_choice = st.selectbox("Status Filter", ["All Creators", "Qualified (PASSED)", "Disqualified (FAILED)"], label_visibility="collapsed")
-    with c_down:
-        if DATASET_CSV_PATH.exists():
-            with open(DATASET_CSV_PATH, "rb") as f:
-                st.download_button("📥 Download Dataset (CSV)", f, "influencer_dataset.csv", "text/csv", use_container_width=True)
 
     filtered = df.copy()
     if search_term:
@@ -618,7 +637,88 @@ with tab_dataset:
         "Audit Reason": filtered["filter_reason"]
     })
 
-    st.dataframe(table_view, use_container_width=True, height=450)
+    st.dataframe(table_view, use_container_width=True, height=430)
+
+    # --------------------------------------------------------------------------
+    # MULTI-FORMAT EXPORT CENTER
+    # --------------------------------------------------------------------------
+    st.markdown("---")
+    st.markdown("#### 📥 **Download & Export Influencers List**")
+    st.caption("Export the shortlisted creators in your preferred format (CSV, Excel, JSON, Markdown).")
+
+    exp_col_scope, exp_col_csv, exp_col_xlsx, exp_col_json, exp_col_md = st.columns([1.8, 1.2, 1.2, 1.2, 1.2])
+
+    with exp_col_scope:
+        export_scope = st.radio(
+            "Export Scope",
+            [f"Filtered Selection ({len(table_view)})", f"Full Dataset ({len(df)})"],
+            horizontal=False,
+            help="Choose whether to download only the currently searched/filtered rows or the entire 55+ creator dataset."
+        )
+
+    # Prepare export dataframe
+    if "Filtered" in export_scope:
+        df_target = table_view
+        prefix = "influencers_filtered"
+    else:
+        df_target = pd.DataFrame({
+            "Influencer Name": df["name"],
+            "Platform": df["platform"],
+            "Profile URL": df["profile_url"],
+            "Follower Count": df["followers"],
+            "Engagement Rate": df["engagement_rate"].apply(lambda x: f"{x:.1f}%"),
+            "Category / Niche": df["niche"],
+            "Content Themes": df["content_themes"],
+            "Contact Email": df["email"],
+            "Instagram / YouTube / TikTok": df.get("social_handles", pd.Series([""] * len(df))),
+            "Website": df.get("website", pd.Series([""] * len(df))),
+            "Audience Age": df.get("audience_age", pd.Series(["20-35"] * len(df))),
+            "Audience Gender": df.get("audience_gender", pd.Series(["Mixed (Tech Audience)"] * len(df))),
+            "Audience Geography": df.get("audience_geography", pd.Series(["Global"] * len(df))),
+            "Status": df["filter_status"],
+            "Audit Reason": df["filter_reason"]
+        })
+        prefix = "influencer_dataset_full"
+
+    with exp_col_csv:
+        st.markdown("**Flat File**")
+        st.download_button(
+            "📄 CSV (.csv)",
+            df_to_csv_str(df_target),
+            f"{prefix}.csv",
+            "text/csv",
+            use_container_width=True
+        )
+
+    with exp_col_xlsx:
+        st.markdown("**Spreadsheet**")
+        st.download_button(
+            "📊 Excel (.xlsx)",
+            df_to_excel_bytes(df_target),
+            f"{prefix}.xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
+
+    with exp_col_json:
+        st.markdown("**Developer API**")
+        st.download_button(
+            "🌐 JSON (.json)",
+            df_to_json_str(df_target),
+            f"{prefix}.json",
+            "application/json",
+            use_container_width=True
+        )
+
+    with exp_col_md:
+        st.markdown("**Documentation**")
+        st.download_button(
+            "📝 Markdown (.md)",
+            df_to_markdown_str(df_target),
+            f"{prefix}.md",
+            "text/markdown",
+            use_container_width=True
+        )
 
 # ------------------------------------------------------------------------------
 # TAB 2: PERSONALIZED MESSAGES
@@ -731,13 +831,15 @@ with tab_sending:
                 use_container_width=True,
                 height=260
             )
-            col_d1, col_d2 = st.columns([1, 1])
+            col_d1, col_d2, col_d3, col_d4 = st.columns([1, 1, 1, 1])
             with col_d1:
-                if TRACKER_CSV_PATH.exists():
-                    with open(TRACKER_CSV_PATH, "rb") as f:
-                        st.download_button("📥 Download Tracker Log (CSV)", f, "outreach_tracker.csv", "text/csv", use_container_width=True)
+                st.download_button("📄 CSV (.csv)", df_to_csv_str(df_fresh), "outreach_tracker.csv", "text/csv", use_container_width=True)
             with col_d2:
-                if st.button("🗑️ Clear Audit Log", use_container_width=True):
+                st.download_button("📊 Excel (.xlsx)", df_to_excel_bytes(df_fresh), "outreach_tracker.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+            with col_d3:
+                st.download_button("🌐 JSON (.json)", df_to_json_str(df_fresh), "outreach_tracker.json", "application/json", use_container_width=True)
+            with col_d4:
+                if st.button("🗑️ Clear Log", use_container_width=True):
                     storage.clear_outreach_logs()
                     st.success("Log cleared!")
                     st.rerun()

@@ -9,7 +9,15 @@ import logging
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 import pandas as pd
-from config import DB_PATH, DATASET_CSV_PATH, TRACKER_CSV_PATH
+from config import (
+    DB_PATH,
+    DATASET_CSV_PATH,
+    DATASET_JSON_PATH,
+    DATASET_EXCEL_PATH,
+    TRACKER_CSV_PATH,
+    TRACKER_JSON_PATH,
+    TRACKER_EXCEL_PATH
+)
 from models import Influencer, OutreachRecord, PersonalizedPitch
 
 logger = logging.getLogger(__name__)
@@ -222,7 +230,13 @@ class OutreachStorage:
                 "Status": df_inf["filter_status"],
                 "Audit Reason": df_inf["filter_reason"]
             })
+            # Export CSV, JSON, and Excel formats
             formatted_inf.to_csv(DATASET_CSV_PATH, index=False)
+            formatted_inf.to_json(DATASET_JSON_PATH, orient="records", indent=2)
+            try:
+                formatted_inf.to_excel(DATASET_EXCEL_PATH, index=False, engine="openpyxl")
+            except Exception as e:
+                logger.warning(f"Excel dataset export failed: {e}")
 
         # Format Outreach Tracker Table
         # Influencer | Email | Message Generated | Sent | Date | Status
@@ -240,14 +254,29 @@ class OutreachStorage:
                 "Status": df_log["status"]
             })
             formatted_log.to_csv(TRACKER_CSV_PATH, index=False)
+            formatted_log.to_json(TRACKER_JSON_PATH, orient="records", indent=2)
+            try:
+                formatted_log.to_excel(TRACKER_EXCEL_PATH, index=False, engine="openpyxl")
+            except Exception as e:
+                logger.warning(f"Excel tracker export failed: {e}")
         else:
             # Create empty tracker template if no logs yet
-            pd.DataFrame(columns=[
+            empty_df = pd.DataFrame(columns=[
                 "Influencer", "Email", "Email Subject", "Email Pitch",
                 "Instagram DM", "Message Generated", "Sent", "Date", "Status"
-            ]).to_csv(TRACKER_CSV_PATH, index=False)
+            ])
+            empty_df.to_csv(TRACKER_CSV_PATH, index=False)
+            empty_df.to_json(TRACKER_JSON_PATH, orient="records", indent=2)
+            try:
+                empty_df.to_excel(TRACKER_EXCEL_PATH, index=False, engine="openpyxl")
+            except Exception:
+                pass
 
         return {
             "dataset_csv": str(DATASET_CSV_PATH),
-            "tracker_csv": str(TRACKER_CSV_PATH)
+            "dataset_json": str(DATASET_JSON_PATH),
+            "dataset_excel": str(DATASET_EXCEL_PATH),
+            "tracker_csv": str(TRACKER_CSV_PATH),
+            "tracker_json": str(TRACKER_JSON_PATH),
+            "tracker_excel": str(TRACKER_EXCEL_PATH)
         }

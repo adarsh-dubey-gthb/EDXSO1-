@@ -250,7 +250,7 @@ To scale this pipeline from a 50-candidate test run to a production system handl
 | **1. GitHub repository or project files** | Clean repository root (`.gitignore` protects API secrets and `.env`) | ✅ Complete |
 | **2. README / documentation** | Comprehensive architecture, workflows, setup, and evaluation guide (`README.md`) | ✅ Complete |
 | **3. Working demo or screenshots** | Interactive Streamlit Dashboard (`streamlit run app.py`) & Terminal CLI (`python cli.py --agent`) | ✅ Complete |
-| **4. Influencer dataset** | `data/influencer_dataset.csv` (88 creators enriched with all 13 Section 3 mandatory & optional columns) | ✅ Complete |
+| **4. Influencer dataset** | `data/influencer_dataset.csv`, `.xlsx`, `.json` (Enriched with all 13 Section 3 mandatory & optional columns; downloadable in CSV, Excel, JSON, Markdown) | ✅ Complete |
 | **5. Sample personalized messages** | Strict 60–90w email pitches & 15–30w social DMs (see concrete samples below) | ✅ Complete |
 | **6. Automation workflow** | Import-ready n8n pipeline: `workflows/n8n_outreach_workflow.json` & n8n Cloud webhook integration | ✅ Complete |
 | **7. Setup instructions** | Quickstart steps for Python 3.10+, pip dependencies, environment config, and dashboard execution | ✅ Complete |

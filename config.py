@@ -63,7 +63,11 @@ COLLABORATION_ANGLES = [
 # ==============================================================================
 DB_PATH = DATA_DIR / "outreach_system.db"
 DATASET_CSV_PATH = DATA_DIR / "influencer_dataset.csv"
+DATASET_JSON_PATH = DATA_DIR / "influencer_dataset.json"
+DATASET_EXCEL_PATH = DATA_DIR / "influencer_dataset.xlsx"
 TRACKER_CSV_PATH = DATA_DIR / "outreach_tracker.csv"
+TRACKER_JSON_PATH = DATA_DIR / "outreach_tracker.json"
+TRACKER_EXCEL_PATH = DATA_DIR / "outreach_tracker.xlsx"
 
 # ==============================================================================
 # API KEYS & CREDENTIALS (Loaded from .env)

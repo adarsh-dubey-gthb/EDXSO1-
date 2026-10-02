@@ -1,2 +1,21 @@
-Influencer,Email,Message Generated,Sent,Date,Status,Instagram DM
-AI Engineer Diary (Marta),marta@aiengineerdiary.dev,Yes,Simulated,2026-10-02 02:29:02,SIMULATED,Hey AI! Loved your recent breakdown on LLMOps. We're launching DevPulse and would love to partner on a collaboration. Open to a quick chat?
+Influencer,Email,Email Subject,Email Pitch,Instagram DM,Message Generated,Sent,Date,Status
+PromptLab with Leo,leo@promptlab.ai,Collaboration on AI Agents with DevPulse,"Hi PromptLab,
+
+Loved your recent breakdown on ""Building a Self-Correcting Research Agent with LangGraph and Python"". Your hands-on focus on AI Agents resonates deeply with our engineering team at DevPulse.
+
+We're launching an observability workspace built specifically for active developers. Given your engaged community, we would love to sponsor an upcoming video or partner on a dedicated early beta access & product review.
+
+We provide full creative freedom and competitive rates. Would you be open to exploring a sponsorship or integration this month?
+
+Best regards,
+Alex Vance | DevPulse Partnerships",Hey PromptLab! Loved your recent breakdown on AI Agents. We're launching DevPulse and would love to partner on a review. Open to a quick chat?,Yes,Yes,2026-10-02 03:38:59,SENT
+AI Engineer Diary (Marta),marta@aiengineerdiary.dev,Collaboration on LLMOps with DevPulse,"Hi AI,
+
+Loved your recent breakdown on ""How We Test and Benchmark LLM Outputs Before Shipping to Production"". Your hands-on focus on LLMOps resonates deeply with our engineering team at DevPulse.
+
+We're launching an observability workspace built specifically for active developers. Given your engaged community, we would love to sponsor an upcoming video or partner on a dedicated ugc / technical walkthrough creation.
+
+We provide full creative freedom and competitive rates. Would you be open to exploring a sponsorship or integration this month?
+
+Best regards,
+Alex Vance | DevPulse Partnerships",Hey AI! Loved your recent breakdown on LLMOps. We're launching DevPulse and would love to partner on a collaboration. Open to a quick chat?,Yes,Simulated,2026-10-02 02:29:02,SIMULATED
