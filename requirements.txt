@@ -10,8 +10,14 @@ scrapetube>=2.6.0
 # Interactive Reviewer Dashboard
 streamlit>=1.35.0
 
-# Data Analysis & CSV handling
+# Data Analysis & Excel / CSV handling
 pandas>=2.2.0
+openpyxl>=3.1.2
+tabulate>=0.9.0
+
+# AI Agents & LLM Integration
+langchain-core>=0.2.0
+google-genai>=0.1.0
 
 # Environment Management
 python-dotenv>=1.0.1

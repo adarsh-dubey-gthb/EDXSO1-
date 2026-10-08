@@ -7,14 +7,15 @@ import sys
 import subprocess
 
 # Auto-launch Streamlit if executed directly via "python app.py"
-try:
-    from streamlit.runtime.scriptrunner import get_script_run_ctx
-    if get_script_run_ctx() is None:
-        print("\n[+] Launching Streamlit Web Dashboard in browser...\n")
-        subprocess.run([sys.executable, "-m", "streamlit", "run", __file__])
-        sys.exit(0)
-except Exception:
-    pass
+if __name__ == "__main__":
+    try:
+        from streamlit.runtime.scriptrunner import get_script_run_ctx
+        if get_script_run_ctx() is None:
+            print("\n[+] Launching Streamlit Web Dashboard in browser...\n")
+            subprocess.run([sys.executable, "-m", "streamlit", "run", __file__])
+            sys.exit(0)
+    except Exception:
+        pass
 
 import io
 import streamlit as st

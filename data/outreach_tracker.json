@@ -1,5 +1,27 @@
 [
   {
+    "Influencer":"Mohit Decodes",
+    "Email":"mohitdecodes@gmail.com",
+    "Email Subject":"Collaboration on Fastapi with DevPulse",
+    "Email Pitch":"Hi Mohit,\n\nLoved your recent breakdown on \"FastAPI Full Course 2026 in Hindi | Beginner to Advanced | Projects + Interview Preparation\". Your hands-on focus on Fastapi resonates deeply with our engineering team at DevPulse.\n\nWe're launching an observability workspace built specifically for active developers. Given your engaged community, we would love to sponsor an upcoming video or partner on a dedicated community ambassador program.\n\nWe provide full creative freedom and competitive rates. Would you be open to exploring a sponsorship or integration this month?\n\nBest regards,\nAlex Vance | DevPulse Partnerships",
+    "Instagram DM":"Hey Mohit! Loved your recent breakdown on Fastapi. We're launching DevPulse and would love to partner on a collaboration. Open to a quick chat?",
+    "Message Generated":"Yes",
+    "Sent":"Yes",
+    "Date":"2026-10-02 19:35:38",
+    "Status":"SENT"
+  },
+  {
+    "Influencer":"FastAPI Master",
+    "Email":"support@fastapimaster.dev",
+    "Email Subject":"Collaboration on FastAPI with DevPulse",
+    "Email Pitch":"Hi FastAPI,\n\nLoved your recent breakdown on \"Building High Performance Asynchronous Background Tasks with FastAPI and Celery\". Your hands-on focus on FastAPI resonates deeply with our engineering team at DevPulse.\n\nWe're launching an observability workspace built specifically for active developers. Given your engaged community, we would love to sponsor an upcoming video or partner on a dedicated community ambassador program.\n\nWe provide full creative freedom and competitive rates. Would you be open to exploring a sponsorship or integration this month?\n\nBest regards,\nAlex Vance | DevPulse Partnerships",
+    "Instagram DM":"Hey FastAPI! Loved your recent breakdown on FastAPI. We're launching DevPulse and would love to partner on a collaboration. Open to a quick chat?",
+    "Message Generated":"Yes",
+    "Sent":"Simulated",
+    "Date":"2026-10-02 19:35:01",
+    "Status":"SIMULATED"
+  },
+  {
     "Influencer":"PromptLab with Leo",
     "Email":"leo@promptlab.ai",
     "Email Subject":"Collaboration on AI Agents with DevPulse",

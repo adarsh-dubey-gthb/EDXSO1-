@@ -69,19 +69,46 @@ TRACKER_CSV_PATH = DATA_DIR / "outreach_tracker.csv"
 TRACKER_JSON_PATH = DATA_DIR / "outreach_tracker.json"
 TRACKER_EXCEL_PATH = DATA_DIR / "outreach_tracker.xlsx"
 
+def get_env_or_secret(key: str, default: str = "") -> str:
+    """Retrieve secret from environment variable or streamlit secrets."""
+    val = os.getenv(key)
+    if val:
+        return val
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets") and key in st.secrets:
+            return str(st.secrets[key])
+    except Exception:
+        pass
+    return default
+
+# Sync Streamlit cloud secrets into os.environ so submodules can access them
+try:
+    import streamlit as st
+    if hasattr(st, "secrets"):
+        for _k, _v in st.secrets.items():
+            if _k not in os.environ and isinstance(_v, (str, int, float, bool)):
+                os.environ[_k] = str(_v)
+except Exception:
+    pass
+
 # ==============================================================================
-# API KEYS & CREDENTIALS (Loaded from .env)
+# API KEYS & CREDENTIALS (Loaded from .env or Streamlit Secrets)
 # ==============================================================================
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "")
+OPENAI_API_KEY = get_env_or_secret("OPENAI_API_KEY", "")
+GROQ_API_KEY = get_env_or_secret("GROQ_API_KEY", "")
+GEMINI_API_KEY = get_env_or_secret("GEMINI_API_KEY", "")
+YOUTUBE_API_KEY = get_env_or_secret("YOUTUBE_API_KEY", "")
 
 # Email sending configuration
-SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER = os.getenv("SMTP_USER", "")
-SMTP_PASS = os.getenv("SMTP_PASS", "")
-SENDER_NAME = os.getenv("SENDER_NAME", "DevPulse Outreach Team")
-DEFAULT_SIMULATION_MODE = os.getenv("SIMULATION_MODE", "true").lower() == "true"
-N8N_WEBHOOK_URL = os.getenv("N8N_WEBHOOK_URL", "")
+SMTP_HOST = get_env_or_secret("SMTP_HOST", "smtp.gmail.com")
+try:
+    SMTP_PORT = int(get_env_or_secret("SMTP_PORT", "587"))
+except ValueError:
+    SMTP_PORT = 587
+SMTP_USER = get_env_or_secret("SMTP_USER", "")
+SMTP_PASS = get_env_or_secret("SMTP_PASS", "")
+SENDER_NAME = get_env_or_secret("SENDER_NAME", "DevPulse Outreach Team")
+DEFAULT_SIMULATION_MODE = get_env_or_secret("SIMULATION_MODE", "true").lower() == "true"
+N8N_WEBHOOK_URL = get_env_or_secret("N8N_WEBHOOK_URL", "")
+
