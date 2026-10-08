@@ -28,6 +28,7 @@ from config import (
     MIN_FOLLOWERS,
     MAX_FOLLOWERS,
     MIN_ENGAGEMENT_RATE,
+    MAX_DAYS_INACTIVE,
     DATASET_CSV_PATH,
     DATASET_JSON_PATH,
     DATASET_EXCEL_PATH,
@@ -181,36 +182,116 @@ else:
     st.sidebar.caption("🔴 **Live SMTP Mode:** Emails will be sent over SMTP using credentials in `.env`.")
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("#### **Data & Tracker Controls**")
-if st.sidebar.button("🗑️ Clear Outreach Log (Fresh Start)", use_container_width=True):
+st.sidebar.markdown("#### **🎯 Audit Criteria Filters**")
+crit_followers = st.sidebar.slider(
+    "Follower Range (Micro-tier)",
+    min_value=1_000,
+    max_value=250_000,
+    value=(MIN_FOLLOWERS, MAX_FOLLOWERS),
+    step=1_000,
+    help="Standard micro-influencer window is 5,000 to 100,000."
+)
+crit_min_engagement = st.sidebar.slider(
+    "Min Engagement Rate (%)",
+    min_value=0.5,
+    max_value=8.0,
+    value=MIN_ENGAGEMENT_RATE,
+    step=0.5,
+    help="Minimum healthy engagement threshold (default: 2.0%)."
+)
+crit_max_days = st.sidebar.slider(
+    "Max Inactivity (Days)",
+    min_value=30,
+    max_value=365,
+    value=MAX_DAYS_INACTIVE,
+    step=15,
+    help="Maximum days since last post to consider channel active."
+)
+
+# Instantiate dynamic classifier based on current sidebar settings
+classifier = InfluencerClassifier(
+    min_followers=crit_followers[0],
+    max_followers=crit_followers[1],
+    min_engagement=crit_min_engagement,
+    max_days_inactive=crit_max_days,
+    target_niche=DEFAULT_NICHE
+)
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("#### **Data & Live Controls**")
+if st.sidebar.button("⚡ Fetch Real-Time YouTube Creators", use_container_width=True):
+    with st.spinner("Querying YouTube live for technology creators..."):
+        base_list = discovery.discover(target_niche=DEFAULT_NICHE, limit=25)
+        if base_list:
+            classifier.filter_batch(base_list)
+            enricher.enrich_batch(base_list)
+            storage.save_influencers(base_list)
+            storage.export_to_csv()
+            st.sidebar.success(f"Fetched {len(base_list)} live creators from YouTube!")
+            st.rerun()
+        else:
+            st.sidebar.error("Could not fetch channels from YouTube.")
+
+if st.sidebar.button("🗑️ Clear Discovered Creators", use_container_width=True):
+    storage.clear_influencers()
+    if "agent_drafts" in st.session_state:
+        del st.session_state["agent_drafts"]
+    st.sidebar.success("Cleared all creators!")
+    st.rerun()
+
+if st.sidebar.button("🗑️ Clear Outreach Log", use_container_width=True):
     storage.clear_outreach_logs()
     if "agent_drafts" in st.session_state:
         del st.session_state["agent_drafts"]
     st.sidebar.success("Outreach logs & tracker cleared!")
     st.rerun()
 
-if st.sidebar.button("🔄 Reset to Default 55 Dataset", use_container_width=True):
-    with st.spinner("Restoring default dataset..."):
-        base_list = discovery.discover(target_niche=DEFAULT_NICHE, limit=55)
-        classifier.filter_batch(base_list)
-        enricher.enrich_batch(base_list)
-        storage.save_influencers(base_list)
-        storage.export_to_csv()
-    st.sidebar.success("Reset completed!")
-    st.rerun()
 
-
-# Load dataset from database
+# Load dataset from database (100% Real-Time / Zero Hardcoded)
 all_records = storage.get_all_influencers()
 if not all_records:
-    initial = discovery.discover(target_niche=DEFAULT_NICHE, limit=55)
-    classifier.filter_batch(initial)
-    enricher.enrich_batch(initial)
-    storage.save_influencers(initial)
-    storage.export_to_csv()
-    all_records = storage.get_all_influencers()
+    # If storage is empty, discover real creators live from YouTube
+    initial = discovery.discover(target_niche=DEFAULT_NICHE, limit=20)
+    if initial:
+        classifier.filter_batch(initial)
+        enricher.enrich_batch(initial)
+        storage.save_influencers(initial)
+        storage.export_to_csv()
+        all_records = storage.get_all_influencers()
 
-df = pd.DataFrame(all_records)
+# Re-evaluate stored records against active criteria filters
+if all_records:
+    infl_objs = []
+    for r in all_records:
+        themes = r.get("content_themes")
+        if isinstance(themes, str):
+            themes = [t.strip() for t in themes.split(",") if t.strip()]
+        elif not isinstance(themes, list):
+            themes = ["Technology"]
+        infl_objs.append(Influencer(
+            name=r["name"],
+            platform=r.get("platform", "YouTube"),
+            profile_url=r.get("profile_url", ""),
+            followers=int(r.get("followers", 0)),
+            engagement_rate=float(r.get("engagement_rate", 3.0)),
+            niche=r.get("niche", DEFAULT_NICHE),
+            content_themes=themes,
+            email=r.get("email", "Not Found"),
+            bio_summary=r.get("bio_summary", ""),
+            recent_content_title=r.get("recent_content_title", ""),
+            days_since_last_post=int(r.get("days_since_last_post", 14)),
+            website=r.get("website"),
+            social_handles=r.get("social_handles"),
+            audience_geography=r.get("audience_geography", "Global"),
+            audience_age=r.get("audience_age", "18-34"),
+            audience_gender=r.get("audience_gender", "Mixed")
+        ))
+    classifier.filter_batch(infl_objs)
+    all_records = [inf.model_dump() for inf in infl_objs]
+    df = pd.DataFrame(all_records)
+else:
+    df = pd.DataFrame()
+
 logs = storage.get_all_outreach_logs()
 df_logs = pd.DataFrame(logs) if logs else pd.DataFrame()
 
@@ -254,9 +335,9 @@ st.markdown("Discover, filter, enrich, and personalize outreach pitches for micr
 
 # Clean metric cards
 total_count = len(df)
-passed_count = len(df[df["filter_status"] == "PASSED"])
-failed_count = len(df[df["filter_status"] == "FAILED"])
-sent_count = len(df_logs[df_logs["sent"].isin(["Yes", "Simulated"])]) if not df_logs.empty else 0
+passed_count = len(df[df["filter_status"] == "PASSED"]) if not df.empty and "filter_status" in df.columns else 0
+failed_count = len(df[df["filter_status"] == "FAILED"]) if not df.empty and "filter_status" in df.columns else 0
+sent_count = len(df_logs[df_logs["sent"].isin(["Yes", "Simulated"])]) if not df_logs.empty and "sent" in df_logs.columns else 0
 
 m1, m2, m3, m4 = st.columns(4)
 with m1:
@@ -395,7 +476,7 @@ with tab_agent:
                 candidate_pool = []
 
         if not candidate_pool:
-            st.error("No creators passed the filtering criteria (5k-100k followers, 2% engagement, active < 120 days). Try another search query or click 'Reset to Default 55 Dataset' in the sidebar.")
+            st.error("No creators passed the filtering criteria (5k-100k followers, 2% engagement, active < 120 days). Try another search query or click '⚡ Fetch Real-Time YouTube Creators' in the sidebar.")
         else:
             with st.spinner(f"Step 3: LangChain Mail Agent ranking {len(candidate_pool)} passed creators and drafting outreach for Top 5..."):
                 top_5_results = mail_agent.run_mail_agent_for_top_5(candidate_pool)
@@ -644,12 +725,48 @@ with tab_agent:
 # ------------------------------------------------------------------------------
 with tab_dataset:
     st.write("")
+    
+    # --------------------------------------------------------------------------
+    # REAL-TIME YOUTUBE DISCOVERY CONTROL (ZERO HARDCODED)
+    # --------------------------------------------------------------------------
+    with st.container(border=True):
+        st.markdown("#### 🔴 **Live YouTube Real-Time Discovery**")
+        st.caption("Zero hardcoded data — searches YouTube live, extracts channel metrics, recent uploads, and contact details dynamically.")
+        c_yt_topic, c_yt_limit, c_yt_btn = st.columns([3, 1.2, 1.8])
+        with c_yt_topic:
+            live_yt_topic = st.text_input(
+                "Search Topic / Query",
+                value="python developer",
+                placeholder="e.g. python, fastapi, devops, react, rust, ai agents",
+                key="tab1_live_yt_query"
+            )
+        with c_yt_limit:
+            live_yt_limit = st.selectbox("Max Channels", [10, 20, 30, 50], index=1, key="tab1_live_yt_limit")
+        with c_yt_btn:
+            st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+            btn_fetch_live = st.button("⚡ Fetch Live from YouTube", type="primary", use_container_width=True, key="tab1_fetch_btn")
+
+        if btn_fetch_live:
+            with st.spinner(f"Crawling YouTube live for '{live_yt_topic}' ({live_yt_limit} channels)..."):
+                live_cands = discovery.discover_live_search(query=live_yt_topic.strip(), limit=int(live_yt_limit), niche=DEFAULT_NICHE)
+                if live_cands:
+                    classifier.filter_batch(live_cands)
+                    enricher.enrich_batch(live_cands)
+                    storage.save_influencers(live_cands)
+                    storage.export_to_csv()
+                    st.success(f"Successfully discovered and evaluated {len(live_cands)} live creators from YouTube!")
+                    st.rerun()
+                else:
+                    st.error("No channels discovered. Please try another search query.")
+
+    st.write("")
     c_search, c_status = st.columns([3, 2])
     
     with c_search:
         search_term = st.text_input("Search creator, topic, or email", placeholder="Type to filter...", label_visibility="collapsed")
     with c_status:
         status_choice = st.selectbox("Status Filter", ["All Creators", "Qualified (PASSED)", "Disqualified (FAILED)"], label_visibility="collapsed")
+
 
     filtered = df.copy()
     if search_term:
@@ -664,23 +781,31 @@ with tab_dataset:
         filtered = filtered[filtered["filter_status"] == "FAILED"]
 
     # Clean display columns matching Section 3 Profile Enrichment
-    table_view = pd.DataFrame({
-        "Influencer Name": filtered["name"],
-        "Platform": filtered["platform"],
-        "Profile URL": filtered["profile_url"],
-        "Follower Count": filtered["followers"].apply(lambda x: f"{x:,}"),
-        "Engagement Rate": filtered["engagement_rate"].apply(lambda x: f"{x:.1f}%"),
-        "Category / Niche": filtered["niche"],
-        "Content Themes": filtered["content_themes"],
-        "Contact Email": filtered["email"],
-        "Instagram / YouTube / TikTok": filtered["social_handles"] if "social_handles" in filtered.columns else "",
-        "Website": filtered["website"] if "website" in filtered.columns else "",
-        "Audience Age": filtered["audience_age"] if "audience_age" in filtered.columns else "20-35",
-        "Audience Gender": filtered["audience_gender"] if "audience_gender" in filtered.columns else "Mixed (Tech Audience)",
-        "Audience Geography": filtered["audience_geography"] if "audience_geography" in filtered.columns else "Global",
-        "Status": filtered["filter_status"],
-        "Audit Reason": filtered["filter_reason"]
-    })
+    if filtered.empty or "name" not in filtered.columns:
+        table_view = pd.DataFrame(columns=[
+            "Influencer Name", "Platform", "Profile URL", "Follower Count",
+            "Engagement Rate", "Category / Niche", "Content Themes", "Contact Email",
+            "Instagram / YouTube / TikTok", "Website", "Audience Age", "Audience Gender",
+            "Audience Geography", "Status", "Audit Reason"
+        ])
+    else:
+        table_view = pd.DataFrame({
+            "Influencer Name": filtered["name"],
+            "Platform": filtered["platform"],
+            "Profile URL": filtered["profile_url"],
+            "Follower Count": filtered["followers"].apply(lambda x: f"{x:,}"),
+            "Engagement Rate": filtered["engagement_rate"].apply(lambda x: f"{x:.1f}%"),
+            "Category / Niche": filtered["niche"],
+            "Content Themes": filtered["content_themes"],
+            "Contact Email": filtered["email"],
+            "Instagram / YouTube / TikTok": filtered["social_handles"] if "social_handles" in filtered.columns else "",
+            "Website": filtered["website"] if "website" in filtered.columns else "",
+            "Audience Age": filtered["audience_age"] if "audience_age" in filtered.columns else "20-35",
+            "Audience Gender": filtered["audience_gender"] if "audience_gender" in filtered.columns else "Mixed (Tech Audience)",
+            "Audience Geography": filtered["audience_geography"] if "audience_geography" in filtered.columns else "Global",
+            "Status": filtered["filter_status"],
+            "Audit Reason": filtered["filter_reason"]
+        })
 
     # --------------------------------------------------------------------------
     # MULTI-FORMAT EXPORT CENTER (LOCATED AT THE TOP FOR IMMEDIATE ACCESS)

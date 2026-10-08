@@ -58,15 +58,15 @@ def run_pipeline(simulation_mode: bool = True, target_count: int = 55, search_qu
     dispatcher = OutreachDispatcher(storage=storage, simulation_mode=simulation_mode)
 
     # --------------------------------------------------------------------------
-    # STAGE 1: INFLUENCER DISCOVERY
+    # STAGE 1: INFLUENCER DISCOVERY (100% REAL-TIME FROM YOUTUBE)
     # --------------------------------------------------------------------------
     if search_query:
-        console.print(f"\n[bold yellow]Step 1: Real-time Live Discovery for '{search_query}' (Free Web Scraper)...[/bold yellow]")
-        influencers = discovery_engine.discover_live_search(query=search_query, limit=10, niche=DEFAULT_NICHE)
+        console.print(f"\n[bold yellow]Step 1: Real-Time Live YouTube Discovery for '{search_query}'...[/bold yellow]")
+        influencers = discovery_engine.discover_live_search(query=search_query, limit=target_count, niche=DEFAULT_NICHE)
     else:
-        console.print("\n[bold yellow]Step 1: Discovering Influencers (Niche: Technology)...[/bold yellow]")
+        console.print(f"\n[bold yellow]Step 1: Fetching Real-Time YouTube Creators (Niche: Technology, Target: {target_count})...[/bold yellow]")
         influencers = discovery_engine.discover(target_niche=DEFAULT_NICHE, limit=target_count)
-    console.print(f"[green][OK] Discovered {len(influencers)} influencer profiles.[/green]")
+    console.print(f"[green][OK] Discovered {len(influencers)} live YouTube influencer profiles in real time.[/green]")
 
     # --------------------------------------------------------------------------
     # STAGE 2: FILTERING & CLASSIFICATION

@@ -24,7 +24,8 @@ TECH_KEYWORDS = [
     "aws", "docker", "kubernetes", "machine learning", "artificial intelligence",
     "ai", "data science", "cybersecurity", "software engineer", "coding",
     "open source", "developer tools", "rust", "golang", "backend", "frontend",
-    "linux", "bash", "saas", "security", "engineering", "code", "system", "database"
+    "linux", "bash", "saas", "security", "engineering", "code", "system", "database",
+    "tech", "developer", "programming", "tutorial", "software", "web", "dev", "api", "git"
 ]
 
 # ==============================================================================

@@ -1,5 +1,38 @@
 [
   {
+    "Influencer":"Tech With Rathan",
+    "Email":"developer.rathan@gmail.com",
+    "Email Subject":"Collaboration on Django rest framework project with DevPulse",
+    "Email Pitch":"Hi Tech,\n\nLoved your recent breakdown on \"API Development with Django REST Framework - Master DRF In Just 4 Hours\". Your hands-on focus on Django rest framework project resonates deeply with our engineering team at DevPulse.\n\nWe're launching an observability workspace built specifically for active developers. Given your engaged community, we would love to sponsor an upcoming video or partner on a dedicated early beta access & product review.\n\nWe provide full creative freedom and competitive rates. Would you be open to exploring a sponsorship or integration this month?\n\nBest regards,\nAlex Vance | DevPulse Partnerships",
+    "Instagram DM":"Hey Tech! Loved your recent breakdown on Django rest framework project. We're launching DevPulse and would love to partner on a review. Open to a quick chat?",
+    "Message Generated":"Yes",
+    "Sent":"Simulated",
+    "Date":"2026-10-08 18:38:00",
+    "Status":"SIMULATED"
+  },
+  {
+    "Influencer":"Code with Josh",
+    "Email":"Not Found",
+    "Email Subject":"Collaboration on Fastapi with DevPulse",
+    "Email Pitch":"Hi Code,\n\nLoved your recent breakdown on \"FastAPI Crash Course 2025: Python Tuto...",
+    "Instagram DM":"Hey Code! Loved your recent breakdown on Fastapi. We're launching DevPulse and would love to partner on a collaboration. Open to a quick chat?",
+    "Message Generated":"Yes",
+    "Sent":"No",
+    "Date":"2026-10-08 18:38:00",
+    "Status":"SKIPPED_NO_EMAIL"
+  },
+  {
+    "Influencer":"pixegami",
+    "Email":"Not Found",
+    "Email Subject":"Collaboration on Fastapi with DevPulse",
+    "Email Pitch":"Hi pixegami,\n\nLoved your recent breakdown on \"Python FastAPI Tutorial: Build a R...",
+    "Instagram DM":"Hey pixegami! Loved your recent breakdown on Fastapi. We're launching DevPulse and would love to partner on a sponsorship. Open to a quick chat?",
+    "Message Generated":"Yes",
+    "Sent":"No",
+    "Date":"2026-10-08 18:38:00",
+    "Status":"SKIPPED_NO_EMAIL"
+  },
+  {
     "Influencer":"Mohit Decodes",
     "Email":"mohitdecodes@gmail.com",
     "Email Subject":"Collaboration on Fastapi with DevPulse",

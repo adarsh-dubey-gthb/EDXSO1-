@@ -201,6 +201,14 @@ class OutreachStorage:
             conn.commit()
         self.export_to_csv()
 
+    def clear_influencers(self):
+        """Wipes all discovered influencers from database and resets export files."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM influencers")
+            conn.commit()
+        self.export_to_csv()
+
 
     def export_to_csv(self) -> Dict[str, str]:
         """

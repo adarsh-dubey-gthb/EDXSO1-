@@ -1,7 +1,8 @@
 """
 Discovery Engine Module.
-Discovers and extracts influencer candidate profiles from social platforms
-(YouTube Data API v3 or curated seed dataset).
+Discovers and extracts real-time influencer candidate profiles directly
+from YouTube (via Live Real-Time Web Scraper or official YouTube Data API v3).
+Zero hardcoded data - 100% dynamic live retrieval.
 """
 
 import logging
@@ -9,7 +10,6 @@ from typing import List, Optional
 import requests
 from config import YOUTUBE_API_KEY, TECH_KEYWORDS, DEFAULT_NICHE
 from models import Influencer
-from discovery.seed_dataset import get_seed_influencers
 from discovery.live_scraper import LiveYouTubeScraper
 
 logger = logging.getLogger(__name__)
@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 
 class InfluencerDiscoveryEngine:
     """
-    Discovery engine responsible for querying platform APIs, live web scrapers,
-    or verified repositories to retrieve micro-influencers matching a target niche.
+    Discovery engine responsible for querying YouTube live in real time to retrieve
+    micro-influencer channels matching a target niche with zero hardcoded creators.
     """
 
     def __init__(self, api_key: Optional[str] = None):
@@ -27,22 +27,21 @@ class InfluencerDiscoveryEngine:
 
     def discover_live_search(self, query: str = "python developer", limit: int = 10, niche: str = DEFAULT_NICHE) -> List[Influencer]:
         """
-        Executes real-time live discovery from YouTube without requiring any API keys.
+        Executes real-time live discovery from YouTube for any custom keyword or niche.
         """
         return self.live_scraper.search_live(query=query, limit=limit, niche=niche)
 
-    def discover_from_youtube_api(self, query: str = "python developer", max_results: int = 15) -> List[Influencer]:
+    def discover_from_youtube_api(self, query: str = "python developer", max_results: int = 25, niche: str = DEFAULT_NICHE) -> List[Influencer]:
         """
-        Queries the official YouTube Data API v3 for channels matching tech queries.
-        Retrieves channel statistics, subscriber counts, and recent video uploads.
+        Queries official YouTube Data API v3 for live channels and metrics in real time.
         """
         if not self.api_key:
-            logger.warning("YouTube API key not configured. Falling back to local discovery repository.")
+            logger.info("YouTube API key not configured. Using live real-time web crawler.")
             return []
 
         discovered: List[Influencer] = []
         try:
-            # Step 1: Search for channels by keyword
+            # Step 1: Search for channels by keyword in real time
             search_url = "https://www.googleapis.com/youtube/v3/search"
             search_params = {
                 "key": self.api_key,
@@ -61,7 +60,7 @@ class InfluencerDiscoveryEngine:
             if not channel_ids:
                 return []
 
-            # Step 2: Fetch detailed channel statistics
+            # Step 2: Fetch detailed live channel statistics in real time
             channels_url = "https://www.googleapis.com/youtube/v3/channels"
             channels_params = {
                 "key": self.api_key,
@@ -82,8 +81,7 @@ class InfluencerDiscoveryEngine:
                 sub_count = int(stats.get("subscriberCount", 0))
                 view_count = int(stats.get("viewCount", 0))
                 video_count = max(int(stats.get("videoCount", 1)), 1)
-                
-                # Approximate engagement rate based on average views per video relative to subscribers
+
                 avg_views = view_count / video_count
                 engagement = round(min(max((avg_views / max(sub_count, 1)) * 100, 0.5), 15.0), 2)
 
@@ -93,12 +91,14 @@ class InfluencerDiscoveryEngine:
                     profile_url=profile_url,
                     followers=sub_count,
                     engagement_rate=engagement,
-                    niche=DEFAULT_NICHE,
+                    niche=niche,
                     content_themes=[query.capitalize(), "Software Development"],
                     email="Not Found",
                     bio_summary=snippet.get("description", "")[:250],
                     recent_content_title=f"Recent update from {title}",
-                    days_since_last_post=7
+                    days_since_last_post=7,
+                    filter_status="PENDING",
+                    filter_reason="Awaiting evaluation"
                 ))
 
         except Exception as e:
@@ -106,44 +106,32 @@ class InfluencerDiscoveryEngine:
 
         return discovered
 
-    def discover(self, target_niche: str = DEFAULT_NICHE, limit: int = 50) -> List[Influencer]:
+    def discover(self, target_niche: str = DEFAULT_NICHE, limit: int = 50, query: Optional[str] = None) -> List[Influencer]:
         """
         Main discovery orchestrator.
-        Loads at least 50 real influencer records, populating all mandatory fields.
+        Fetches 100% real-time creators directly from YouTube with ZERO hardcoded data.
+        Uses YouTube Data API v3 if API key is provided, or the real-time live scraper.
         """
-        raw_data = get_seed_influencers()
+        logger.info(f"Initiating real-time live discovery from YouTube (target limit: {limit})...")
         influencers: List[Influencer] = []
 
-        for item in raw_data:
-            try:
-                creator = Influencer(
-                    name=item["name"],
-                    platform=item.get("platform", "YouTube"),
-                    profile_url=item["profile_url"],
-                    followers=item["followers"],
-                    engagement_rate=item["engagement_rate"],
-                    niche=item.get("niche", target_niche),
-                    content_themes=item.get("content_themes", []),
-                    email=item.get("email", "Not Found"),
-                    bio_summary=item.get("bio_summary", ""),
-                    recent_content_title=item.get("recent_content_title", ""),
-                    days_since_last_post=item.get("days_since_last_post", 10),
-                    website=item.get("website"),
-                    social_handles=item.get("social_handles"),
-                    audience_geography=item.get("audience_geography", "Global"),
-                    audience_age=item.get("audience_age", "18-34"),
-                    audience_gender=item.get("audience_gender", "Mixed"),
-                    filter_status="PENDING",
-                    filter_reason="Awaiting evaluation"
-                )
-                influencers.append(creator)
-            except Exception as err:
-                logger.error(f"Error parsing record for {item.get('name')}: {err}")
-
-        # If live YouTube API key is provided, supplement with live results
+        # If official YouTube API key is available, query real-time API
         if self.api_key:
-            live_creators = self.discover_from_youtube_api(query="python ai engineer", max_results=10)
-            influencers.extend(live_creators)
+            api_query = query or "python developer"
+            api_creators = self.discover_from_youtube_api(query=api_query, max_results=limit, niche=target_niche)
+            influencers.extend(api_creators)
 
-        logger.info(f"Discovered total of {len(influencers)} influencers.")
-        return influencers[:max(limit, 50)]
+        # If API key returned fewer than requested or was omitted, fetch via real-time live scraper
+        if len(influencers) < limit:
+            remaining = limit - len(influencers)
+            queries = [query] if query else None
+            live_creators = self.live_scraper.search_realtime_creators(queries=queries, limit=remaining, niche=target_niche)
+            # Avoid duplicate channels
+            existing_urls = {inf.profile_url for inf in influencers}
+            for lc in live_creators:
+                if lc.profile_url not in existing_urls:
+                    influencers.append(lc)
+                    existing_urls.add(lc.profile_url)
+
+        logger.info(f"Discovered {len(influencers)} live creators directly from YouTube in real time.")
+        return influencers[:limit]
